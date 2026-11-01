@@ -1,0 +1,13 @@
+{
+  "name": "savant-tutorial-studio",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "record": "tsx src/record.ts"
+  },
+  "dependencies": {
+    "playwright": "^1.56.0",
+    "dotenv": "^17.2.3",
+    "tsx": "^4.20.6"
+  }
+}
