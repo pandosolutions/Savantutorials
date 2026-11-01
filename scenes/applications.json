@@ -1,0 +1,7 @@
+{
+  "id": "applications", "title": "View applications", "route": "/talent/applications", "heading": "Applications",
+  "actions": [
+    { "id": "overview", "kind": "observe", "narration": "View your application repository." },
+    { "id": "progress", "kind": "focus", "selector": "[role=combobox][aria-label='Application progress']", "narration": "The application progress selector shows the available progress control." }
+  ]
+}

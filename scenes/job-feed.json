@@ -1,0 +1,7 @@
+{
+  "id": "job-feed", "title": "Explore the job feed", "route": "/talent/jobs", "heading": "Jobs",
+  "actions": [
+    { "id": "overview", "kind": "observe", "narration": "Explore the available jobs in the job feed." },
+    { "id": "browse", "kind": "scroll", "pixels": 500, "narration": "Scroll to view more of the job feed." }
+  ]
+}
