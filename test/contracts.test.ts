@@ -1,11 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { stagingOrigin } from '../src/config.ts';
+import { stagingOrigin, apiOrigin } from '../src/config.ts';
 import { sceneSchema, validatePlan } from '../src/contracts.ts';
 import { subtitles } from '../src/media.ts';
 import { claude } from '../src/claude.ts';
 import { z } from 'zod';
 const scene = sceneSchema.parse({ id: 'demo', title: 'Demo', route: '/demo', heading: 'Demo', actions: [{ id: 'look', kind: 'observe', narration: 'Look here.' }] });
+test('external API configuration cannot point to either existing Savant database', () => {
+  for (const raw of ['https://auldwzcqtjpwmliqqoyj.supabase.co', 'https://tohslisvzeliehezgnod.supabase.co', 'https://attacker.test', 'https://adeoehrrhanaxzsudzll.supabase.co/path']) assert.throws(() => apiOrigin(raw));
+  assert.equal(apiOrigin('https://adeoehrrhanaxzsudzll.supabase.co'), 'https://adeoehrrhanaxzsudzll.supabase.co');
+});
 test('staging origin rejects production, credentials, paths, and origin confusion', () => {
   for (const url of ['http://staging.test', 'https://savantalent.com', 'https://www.savantalent.com', 'https://api.savantalent.com', 'https://user:pass@staging.test', 'https://staging.test/path', 'https://staging.test?x=1']) assert.throws(() => stagingOrigin(url, new URL(url).origin));
   assert.throws(() => stagingOrigin('https://staging.test.attacker.test', 'https://staging.test'));

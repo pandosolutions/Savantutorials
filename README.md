@@ -71,3 +71,8 @@ The working browser agent uses Claude vision and explicit Playwright actions. It
 A live Savant acceptance run still requires staging access, validated selectors, a Claude key/model and the identified optional integrations. No production migration or website deployment is part of this project.
 
 Implementation references: [Claude Messages API](https://platform.claude.com/docs/en/api/messages), [Playwright video lifecycle](https://playwright.dev/docs/videos), [MCP TypeScript SDK v1](https://github.com/modelcontextprotocol/typescript-sdk/tree/v1.x).
+
+### Connected staging adapter
+
+Set STAGING_API_ORIGIN to the exact isolated Supabase origin. Both original Savant project references are rejected. The adapter permits reads plus password/session token exchange, the last-active heartbeat and the read-only employer ratings RPC. Optional notification WebSockets stay disconnected. Fonts and Google sign-in assets may load, but external navigation stays blocked. The local .env takes precedence over inherited desktop settings. The verified job-feed heading is Your job feed; the staging login route is /auth. Other scene assumptions still require validation. test/staging-preflight.ts runs the actual staging recording flow with mocked model replies and writes only to test-output; it is not a live AI review.
+

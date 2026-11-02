@@ -14,7 +14,14 @@ export function config(env = process.env) {
     ffmpeg: env.FFMPEG_PATH || 'ffmpeg', ffprobe: env.FFPROBE_PATH || 'ffprobe',
     loginPath: env.LOGIN_PATH || '/login', authenticatedSelector: required('AUTHENTICATED_SELECTOR'),
     loginPostPaths: z.array(z.string().startsWith('/')).parse(JSON.parse(env.LOGIN_POST_PATHS || '[]')),
+    stagingApiOrigin: apiOrigin(env.STAGING_API_ORIGIN),
     outputDir: env.OUTPUT_DIR || 'output',
   };
+}
+export function apiOrigin(raw?: string): string | undefined {
+  if (!raw) return undefined;
+  const url = new URL(raw);
+  if (url.origin !== raw || url.protocol !== 'https:' || !/^[a-z]{20}\.supabase\.co$/.test(url.hostname) || /^(auldwzcqtjpwmliqqoyj|tohslisvzeliehezgnod)\./.test(url.hostname)) throw new Error('STAGING_API_ORIGIN must be a separate Supabase project origin');
+  return url.origin;
 }
 export type Config = ReturnType<typeof config>;

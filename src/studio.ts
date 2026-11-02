@@ -9,7 +9,8 @@ import { direct } from './agent.ts';
 import { command, render, probeVideo } from './media.ts';
 import { editWithMcp } from './mcp-video.ts';
 import { guardNetwork } from './network.ts';
-export async function run(args: string[]) {
+import type { Ask } from './claude.ts';
+export async function run(args: string[], ask?: Ask) {
   const id = args[0];
   if (!id || !/^[a-z0-9-]+$/.test(id)) throw new Error('Usage: npm run record -- <scene-id>');
   const scene = sceneSchema.parse(JSON.parse(await readFile(path.resolve('scenes', `${id}.json`), 'utf8')));
@@ -26,20 +27,24 @@ export async function run(args: string[]) {
   try {
     browser = await chromium.launch({ headless: true });
     const login = await browser.newContext({ serviceWorkers: 'block', acceptDownloads: false });
-    await guardNetwork(login, cfg.origin, cfg.loginPostPaths);
+    const loginNetwork = await guardNetwork(login, cfg.origin, cfg.loginPostPaths, cfg.stagingApiOrigin);
     const page = await login.newPage();
     try {
     await page.goto(new URL(cfg.loginPath, cfg.origin).href);
-    await page.getByLabel(/email/i).fill(cfg.email);
-    await page.getByLabel(/password/i).fill(cfg.password);
+    await page.locator('input[type=email]').fill(cfg.email);
+    await page.locator('input[type=password]').fill(cfg.password);
     await page.getByRole('button', { name: /sign in|log in/i }).click();
     await page.locator(cfg.authenticatedSelector).waitFor({ state: 'visible', timeout: 20000 });
-    } catch { throw new Error('Authentication failed; verify synthetic credentials, login selectors and authentication POST paths'); }
+    } catch (error) {
+      const diagnostic = String(error).split(cfg.password).join('[redacted]').split(cfg.email).join('[demo email]');
+      await writeFile(path.join(dir, 'login-diagnostic.json'), JSON.stringify({ diagnostic, blockedRequests: loginNetwork.blockedRequests }, null, 2));
+      throw new Error('Authentication failed; inspect login-diagnostic.json');
+    }
     const storageState = await login.storageState();
     await login.close();
     const context = await browser.newContext({ storageState, serviceWorkers: 'block', acceptDownloads: false,
       viewport: { width: 1440, height: 900 }, recordVideo: { dir, size: { width: 1440, height: 900 } } });
-    const network = await guardNetwork(context, cfg.origin);
+    const network = await guardNetwork(context, cfg.origin, [], cfg.stagingApiOrigin);
     const capture = await context.newPage();
     capture.setDefaultTimeout(10000);
     capture.on('dialog', dialog => { void dialog.dismiss(); });
@@ -51,8 +56,11 @@ export async function run(args: string[]) {
       if (target.origin !== cfg.origin) throw new Error('Scene leaves staging');
       await capture.goto(target.href, { waitUntil: 'domcontentloaded' });
       await capture.getByRole('heading', { name: scene.heading, exact: true }).waitFor({ state: 'visible' });
-      result = await direct(capture, scene, claude(cfg.apiKey, cfg.model), dir, recordingStart);
-      if (network.blocked) throw new Error('Blocked network activity; review staging dependencies before capture');
+      result = await direct(capture, scene, ask || claude(cfg.apiKey, cfg.model), dir, recordingStart);
+      if (network.blocked) {
+        await writeFile(path.join(dir, 'blocked-requests.json'), JSON.stringify(network.blockedRequests, null, 2));
+        throw new Error('Blocked network activity; review blocked-requests.json before capture');
+      }
     } finally { await context.close(); }
     const media = await render(await video.path(), path.join(dir, 'candidate.mp4'), cfg.ffmpeg, cfg.ffprobe, result.evidence);
     if (process.env.MCP_VIDEO_CONFIG) {
