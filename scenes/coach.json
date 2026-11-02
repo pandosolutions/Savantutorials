@@ -1,0 +1,4 @@
+{
+  "id": "coach", "title": "View coaching", "route": "/talent/coach", "heading": "Coach",
+  "actions": [ { "id": "overview", "kind": "observe", "narration": "View the coaching area." } ]
+}
